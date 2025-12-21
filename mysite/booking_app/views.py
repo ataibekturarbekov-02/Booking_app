@@ -1,4 +1,4 @@
-from rest_framework import viewsets, generics, status
+from rest_framework import viewsets, generics, status, permissions
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -16,6 +16,7 @@ from .filters import HotelFilter, RoomFilter
 from rest_framework.filters import SearchFilter, OrderingFilter
 from .pagination import HotelPagination, RoomPagination
 from rest_framework_simplejwt.views import TokenObtainPairView
+from .permissions import IsBookingOwner, IsReviewOwner
 
 
 class RegisterViewSet(generics.CreateAPIView):
@@ -37,8 +38,6 @@ class LoginViewSet(TokenObtainPairView):
             serializer.is_valid(raise_exception=True)
         except Exception:
             return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-
-        user = serializer.validated_data
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -58,14 +57,17 @@ class LogoutViewSet(generics.GenericAPIView):
 class UserProfileListAPIView(generics.ListAPIView):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileListSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return UserProfile.objects.filter(id=self.request.user.id)
 
 
-class UserProfileDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+class UserProfileDetailAPIView(generics.RetrieveAPIView):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
 
     def get_queryset(self):
         return UserProfile.objects.filter(id=self.request.user.id)
@@ -86,7 +88,7 @@ class CityDetailAPIView(generics.RetrieveAPIView):
 class ServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
-
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class HotelListAPIView(generics.ListAPIView):
@@ -99,9 +101,11 @@ class HotelListAPIView(generics.ListAPIView):
     pagination_class = HotelPagination
 
 
+
 class HotelDetailAPIView(generics.RetrieveAPIView):
     queryset = Hotel.objects.all()
     serializer_class = HotelDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 
@@ -115,24 +119,30 @@ class RoomListAPIView(generics.ListAPIView):
     pagination_class = RoomPagination
 
 
-class RoomDetailAPIView(generics.ListAPIView):
+
+class RoomDetailAPIView(generics.RetrieveAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 
 class RoomImageViewSet(viewsets.ModelViewSet):
     queryset = RoomImage.objects.all()
     serializer_class = RoomImageSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
+    permission_classes = [permissions.IsAuthenticated, IsBookingOwner]
+
 
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticated, IsReviewOwner]
